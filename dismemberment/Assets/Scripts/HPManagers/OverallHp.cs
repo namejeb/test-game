@@ -1,27 +1,44 @@
-using Unity.VisualScripting;
 using UnityEngine;
+using System.Collections.Generic;
 
+//Attached to all gameObjects tagged with "Enemy" (auto - by SetupOverallHp script).
 public class OverallHp : MonoBehaviour
 {
-
-    //Components
-    private Ragdoll ragdollScript;
-    
     //Fields
-    [SerializeField] private int overallHp;
-    
+    [SerializeField] private int overallHp = 4;
+    private SetupOverallHp setupOverallHp;
+
     void Awake()
     {
-        ragdollScript = GetComponent<Ragdoll>();
+        setupOverallHp = SetupOverallHp.setupOverallInstance;
+    }
+    
+    void Start()
+    {
+        CopyInitialHp();
+    }
+    
+    public int GetOverallHp()
+    {
+        return overallHp;
     }
 
-    public int TakeOverallDamage(int dmg)
+    public void SetOverallHp(int overallHp)
     {
-        overallHp -= dmg;
-
-        if (overallHp > 0) return overallHp;
-        
-        ragdollScript.ActivateRagdoll();
-        return 0;
+        this.overallHp = overallHp;
+    }
+    
+    
+    //Get overall hp based on enemy type name in the EnemyType list
+    private void CopyInitialHp()
+    {
+        List<SetupOverallHp.EnemyType> typeList = setupOverallHp.enemyTypesList;
+        for (int i = 0; i < typeList.Count; i++)
+        {
+            if (typeList[i].GetEnemyTypeName() == transform.name)
+            {
+                overallHp = typeList[i].GetInitialHp();
+            }
+        }
     }
 }

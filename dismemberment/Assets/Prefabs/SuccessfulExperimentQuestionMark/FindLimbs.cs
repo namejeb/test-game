@@ -1,7 +1,8 @@
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class TestFindLimbs : MonoBehaviour
+//Attached to each enemy types (manual).
+public class FindLimbs : MonoBehaviour
 { 
     private void Start ()
     {
@@ -12,7 +13,8 @@ public class TestFindLimbs : MonoBehaviour
             //When object is limb
             if (obj.CompareTag("Limb"))
             {
-                obj.AddComponent<Dismemberment3>();
+                obj.AddComponent<Dismemberment>();
+                obj.AddComponent<EnemyHpUpdater>();
             }
         }
     }

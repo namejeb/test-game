@@ -1,6 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+//Create pools from the GameObject Arr.
+//Use the SpawnFromPool() function to spawn pooled gameObjects.
+/*Can create pools for gameObjects parented to a container(ex. limbs parented to an enemy container) or a standalone gameObject (ex. bullet)
+    - for this reason, make sure limbs are organized inside a container and tagged with "Limb".
+    - for enemies, only drop one type of each enemies, as limbs of the same name can be reused by the pooler.
+    - no additional rule for pooling standalone gameObjects, just drag and drop inside.
+ */
 public class ObjectPooler : MonoBehaviour
 {
     #region Singleton
@@ -15,11 +22,13 @@ public class ObjectPooler : MonoBehaviour
     #endregion
 
     //Components
-    public GameObject[] ObjectArr;
+    [Header("Insert gameObjects to pool here:")]
+    [SerializeField] GameObject[] objectArr;
     
     //Fields
     private const int poolSize = 5;
-
+    
+    
     [System.Serializable] 
     public class Pool
     {
@@ -58,12 +67,18 @@ public class ObjectPooler : MonoBehaviour
 
     void Start()
     {
+        //Stops ObjectPooler from creating more pools than necessary when entering and exiting playmode.
+        if (pools.Count > 0) pools.Clear();
+        
+        
+        
         poolDictionary = new Dictionary<string, Queue<GameObject>>();
-
+        
         //Mainly for pooling limbs, also for bullet and FX
         //Add characters in inspector
-        foreach (GameObject obj in ObjectArr)
+        foreach (GameObject obj in objectArr)
         {
+            //For objects with Limb gameObjects as children
             if (obj.transform.childCount > 0)
             {
                 //Finds all chidlren in obj, excludes bones, add to pools list
@@ -71,13 +86,14 @@ public class ObjectPooler : MonoBehaviour
                 {
                     GameObject child = obj.transform.GetChild(i).gameObject;
 
-                    if (!child.CompareTag("Bone"))
+                    if (child.CompareTag("Limb"))
                     {
                         Pool newPool = new Pool(child.name, child);
                         pools.Add(newPool);
                     }
                 }
             }
+            //For standalone objects
             else
             {
                 Pool newPool = new Pool(obj.name, obj);
@@ -85,17 +101,18 @@ public class ObjectPooler : MonoBehaviour
             }
         }
 
+
         //Add Queues of gameObjects
         foreach (Pool myPool in pools)
         {
             Queue<GameObject> objPool = new Queue<GameObject>();
-
+            
             //Instantiating, setting inactive & enqueueing into pool
             for (int i = 0; i < myPool.GetSize(); i++)
             {
                 GameObject objToPool = Instantiate(myPool.GetGameObj());
                 
-                objToPool.AddComponent<Rigidbody2D>();
+                //Set up objToPool
                 objToPool.name = myPool.GetName();
                 objToPool.SetActive(false);
 
@@ -107,21 +124,21 @@ public class ObjectPooler : MonoBehaviour
         }
     }
 
-    public GameObject SpawnFromPool(string name, Vector3 position, Quaternion rotation)
+    public GameObject SpawnFromPool(string objName, Vector3 position, Quaternion rotation)
     {
-        if (!poolDictionary.ContainsKey(name))
-        {
-            Debug.Log("Pool '" + name + "' doesn't exist.");
-            return null;
-        }
+        //If pool doesn't exist
+        if (!poolDictionary.ContainsKey(objName)) return null;
         
-        GameObject objectToSpawn = poolDictionary[name].Dequeue();
+        
+        //Spawn from pool
+        GameObject objectToSpawn = poolDictionary[objName].Dequeue();
 
         objectToSpawn.transform.position = position;
         objectToSpawn.transform.rotation = rotation;
         objectToSpawn.SetActive(true);
         
-        poolDictionary[name].Enqueue(objectToSpawn);
+        //Queue up again for future use
+        poolDictionary[objName].Enqueue(objectToSpawn);
 
         return objectToSpawn;
     }
